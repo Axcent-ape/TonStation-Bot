@@ -126,15 +126,21 @@ class TonStation:
                     await self.logout()
                     return None
 
-                r = await (await self.session.post('https://tonstation.app/userprofile/api/v1/users/auth', json={"initData": query})).json()
+                ans = await self.get_user_profile()
+                if ans.get('code') == 404:
+                    url = 'https://tonstation.app/userprofile/api/v1/users'
+                else:
+                    url = 'https://tonstation.app/userprofile/api/v1/users/auth'
+                    self.user_info = ans
+
+                r = await (await self.session.post(url, json={"initData": query})).json()
 
                 if r.get('user'):
                     logger.success(f"Thread {self.thread} | {self.account} | Registered!")
                     self.user_info = r.get('user')
-                else:
-                    self.user_info = await self.get_user_profile()
 
                 access_token = r.get('session').get('accessToken') if r.get('user') else r.get('accessToken')
+
                 self.session.headers['Authorization'] = 'Bearer ' + access_token
                 logger.success(f"Thread {self.thread} | {self.account} | Login")
                 break
